@@ -292,7 +292,7 @@ void Military::recruitSoldiers(int number, Population& population)
 }
 void Military::equipWeapons(int ironAmount, Resources& resources)
 {
-    if (ironAmount < 0 || ironAmount > resources.getResource(3))
+    if (ironAmount < 0 || ironAmount > resources.getResource(Iron))
     {
         cout << "Invalid or insufficient iron amount" << endl;
         return;

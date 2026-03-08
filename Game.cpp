@@ -1,27 +1,66 @@
-#include"Header.h"
-#include<iostream>
-#include<fstream>
-#include<string>
-#include<windows.h>
+#include "Header.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <windows.h>
+#include <memory>
+#include <vector>
 
 using namespace std;
+
+// menu choices for the main loop; values correspond to the console options
+enum class MenuOption {
+    Start = 1,
+    Load,
+    ManagePopulation,
+    ManageResources,
+    ManageMilitary,
+    ManageEconomy,
+    ManageLeadership,
+    ManageBank,
+    ManageSocialStructure,
+    TriggerEvent,
+    NextTurn,
+    Communication,
+    AllianceManagement,
+    TradeSystem,
+    ConflictManagement,
+    MapSystem,
+    Exit
+};
+
+// resource indices (used with Resources::getResource/consumeResources/etc.)
+enum ResourceType {
+    Food = 0,
+    Wood,
+    Stone,
+    Iron,
+    ResourceCount
+};
+
+// constants for map dimensions
+constexpr int MAP_WIDTH = 5;
+constexpr int MAP_HEIGHT = 5;
+
+
 class Game
 {
 private:
-    SocialStructure* socialStructure;
-    Population* population;
-    Military* military;
-    Leadership* leadership;
-    Economy* economy;
-    Bank* bank;
-    Resources* resources;
-    EventHandler* eventHandler;
-    AllianceManager* allianceManager;
-    TradeSystem* tradeSystem;
-    ConflictManager* conflictManager;
-    MapSystem* mapSystem;
-    Logger* logger;
-    comms* communication;
+    // switch to smart pointers to avoid manual memory management
+    std::unique_ptr<SocialStructure> socialStructure;
+    std::unique_ptr<Population> population;
+    std::unique_ptr<Military> military;
+    std::unique_ptr<Leadership> leadership;
+    std::unique_ptr<Economy> economy;
+    std::unique_ptr<Bank> bank;
+    std::unique_ptr<Resources> resources;
+    std::unique_ptr<EventHandler> eventHandler;
+    std::unique_ptr<AllianceManager> allianceManager;
+    std::unique_ptr<TradeSystem> tradeSystem;
+    std::unique_ptr<ConflictManager> conflictManager;
+    std::unique_ptr<MapSystem> mapSystem;
+    std::unique_ptr<Logger> logger;
+    std::unique_ptr<comms> communication;
     int isRunning;
     int turn;
 
@@ -84,7 +123,7 @@ private:
         {
             logFile << "Turn: " << turn
                 << ", Population: " << population->getTotalPopulation()
-                << ", Food: " << resources->getResource(0)
+                << ", Food: " << resources->getResource(Food)
                 << ", Soldiers: " << military->getSoldierCount()
                 << ", Wealth: " << economy->getWealth()
                 << ", Influence: " << leadership->getInfluence()
@@ -96,9 +135,60 @@ private:
         }
     }
 
+    // draw the top-level menu with consistent formatting and colors
+    void displayMainMenu()
+    {
+        struct Option { int color; std::string text; };
+        const std::vector<Option> entries = {
+            {279, "|                       1. Start Game                             |"},
+            {45,  "|                       2. Load Game                              |"},
+            {55,  "|                       3. Manage Population                      |"},
+            {78,  "|                       4. Manage Resources                       |"},
+            {85,  "|                       5. Manage Military                        |"},
+            {95,  "|                       6. Manage Economy                         |"},
+            {105, "|                       7. Manage Leadership                      |"},
+            {115, "|                       8. Manage Bank                            |"},
+            {125, "|                       9. Manage Social Structure                |"},
+            {135, "|                       10. Trigger Event                         |"},
+            {145, "|                       11. Next Turn                             |"},
+            {155, "|                       12. Communication                         |"},
+            {165, "|                       13. Alliance Management                   |"},
+            {175, "|                       14. Trade System                          |"},
+            {185, "|                       15. Conflict Management                   |"},
+            {195, "|                       16. Map System                            |"},
+            {205, "|                       17. Exit                                  |"}
+        };
+
+        setColor(20);
+        cout << "\t\t\t\t\t\t\t\t";
+        cout << "===================================================================\n";
+        setColor(7);
+        cout << "\t\t\t\t\t\t\t\t";
+        setColor(20);
+        cout << "|                          STRONG HOLD GAME                       |\n";
+        setColor(7);
+        cout << "\t\t\t\t\t\t\t\t";
+        setColor(20);
+        cout << "===================================================================\n";
+        setColor(7);
+
+        for (const auto &opt : entries) {
+            cout << "\t\t\t\t\t\t\t\t";
+            setColor(opt.color);
+            cout << opt.text << endl;
+            setColor(7);
+        }
+
+        setColor(20);
+        cout << "\t\t\t\t\t\t\t\t";
+        cout << "===================================================================\n";
+        setColor(11);
+    }
+
+
     void processTurn()
     {
-        double food = (double)resources->getResource(0) / 10.0;
+        double food = (double)resources->getResource(Food) / 10.0;
         population->updatePopulation(food, population->getEmployment(), 60.0);
         economy->generateIncome(population->getTotalPopulation());
         if (turn % 3 == 0)
@@ -116,41 +206,29 @@ private:
     }
 
 public:
-    Game() : isRunning(0), turn(0)
+    Game() :
+        socialStructure(std::make_unique<SocialStructure>()),
+        population(std::make_unique<Population>()),
+        military(std::make_unique<Military>()),
+        leadership(std::make_unique<Leadership>()),
+        economy(std::make_unique<Economy>()),
+        bank(std::make_unique<Bank>()),
+        resources(std::make_unique<Resources>()),
+        eventHandler(std::make_unique<EventHandler>()),
+        allianceManager(std::make_unique<AllianceManager>()),
+        tradeSystem(std::make_unique<TradeSystem>()),
+        conflictManager(std::make_unique<ConflictManager>()),
+        mapSystem(std::make_unique<MapSystem>()),
+        logger(std::make_unique<Logger>()),
+        communication(std::make_unique<comms>()),
+        isRunning(0),
+        turn(0)
     {
-        socialStructure = new SocialStructure();
-        population = new Population();
-        military = new Military();
-        leadership = new Leadership();
-        economy = new Economy();
-        bank = new Bank();
-        resources = new Resources();
-        eventHandler = new EventHandler();
-        allianceManager = new AllianceManager();
-        tradeSystem = new TradeSystem();
-        conflictManager = new ConflictManager();
-        mapSystem = new MapSystem();
-        logger = new Logger();
-        communication = new comms();
+        // constructor body left empty
     }
 
-    ~Game()
-    {
-        delete socialStructure;
-        delete population;
-        delete military;
-        delete leadership;
-        delete economy;
-        delete bank;
-        delete resources;
-        delete eventHandler;
-        delete allianceManager;
-        delete tradeSystem;
-        delete conflictManager;
-        delete mapSystem;
-        delete logger;
-        delete communication;
-    }
+    // defaulted destructor handles unique_ptr cleanup
+    ~Game() = default;
     void setColor(int color)
     {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
@@ -162,110 +240,27 @@ public:
         logScore();
         while (isRunning)
         {
-            setColor(20);
-            cout << "\t\t\t\t\t\t\t\t";
-            cout << "===================================================================\n";
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(20);
-            cout << "|                          STRONG HOLD GAME                       |\n";
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(20);
-            cout << "===================================================================\n";
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(279);
-            cout << "|                       1. Start Game                             |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(45);
-            cout << "|                       2. Load Game                              |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(55);
-            cout << "|                       3. Manage Population                      |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(78);
-            cout << "|                       4. Manage Resources                       |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(85);
-            cout << "|                       5. Manage Military                        |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(95);
-            cout << "|                       6. Manage Economy                         |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(105);
-            cout << "|                       7. Manage Leadership                      |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(115);
-            cout << "|                       8. Manage Bank                            |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(125);
-            cout << "|                       9. Manage Social Structure                |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(135);
-            cout << "|                       10. Trigger Event                         |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(145);
-            cout << "|                       11. Next Turn                             |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(155);
-            cout << "|                       12. Communication                         |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(165);
-            cout << "|                       13. Alliance Management                   |"; setColor(7);  cout << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(175);
-            cout << "|                       14. Trade System                          |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(185);
-            cout << "|                       15. Conflict Management                   |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(195);
-            cout << "|                       16. Map System                            |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(205);
-            cout << "|                       17. Exit                                  |" << endl;
-            setColor(7);
-            cout << "\t\t\t\t\t\t\t\t";
-            setColor(20);
-            cout << "===================================================================\n";
-            setColor(11);
+            displayMainMenu();
             cout << "\nEnter choice: ";
             int choice;
             cin >> choice;
             cin.ignore();
-            switch (choice)
+            switch (static_cast<MenuOption>(choice))
             {
-            case 1:
+            case MenuOption::Start:
                 setColor(19);
                 cout << "\n       *** Starting game ***" << endl;
                 turn = 0;
                 setColor(7);
                 saveGame();
                 break;
-            case 2:
+            case MenuOption::Load:
                 setColor(54);
                 cout << "        *** Loading game ***" << endl;
                 setColor(7);
                 loadGame();
                 break;
-            case 3:
+            case MenuOption::ManagePopulation:
             {
                 setColor(45); 
                 cout << "\n----------------------------------------------\n";
@@ -279,7 +274,7 @@ public:
                 cin.ignore();
                 if (subChoice == 1)
                 {
-                    double food = (double)resources->getResource(0) / 10.0;
+                    double food = (double)resources->getResource(Food) / 10.0;
                     cout << "Enter employment, shelter (0-100): ";
                     double emp, shelter;
                     cin >> emp >> shelter;
@@ -307,7 +302,7 @@ public:
                 logScore();
                 break;
             }
-            case 4:
+            case MenuOption::ManageResources:
             {
                 cout << "1. Gather Resources" << endl;
                 cout << "2. Consume Resources" << endl;
@@ -322,7 +317,7 @@ public:
                     cin >> food >> wood >> stone >> iron;
                     cin.ignore();
                     resources->gatherResources(food, wood, stone, iron);
-                    cout << "Resources: Food=" << resources->getResource(0) << ", Wood=" << resources->getResource(1) << ", Stone=" << resources->getResource(2) << ", Iron=" << resources->getResource(3) << endl;
+                    cout << "Resources: Food=" << resources->getResource(Food) << ", Wood=" << resources->getResource(Wood) << ", Stone=" << resources->getResource(Stone) << ", Iron=" << resources->getResource(Iron) << endl;
                 }
                 else if (subChoice == 2)
                 {
@@ -331,14 +326,14 @@ public:
                     cin >> food >> wood >> stone >> iron;
                     cin.ignore();
                     resources->consumeResources(food, wood, stone, iron);
-                    cout << "Resources: Food=" << resources->getResource(0) << ", Wood=" << resources->getResource(1) << ", Stone=" << resources->getResource(2) << ", Iron=" << resources->getResource(3) << endl;
+                    cout << "Resources: Food=" << resources->getResource(Food) << ", Wood=" << resources->getResource(Wood) << ", Stone=" << resources->getResource(Stone) << ", Iron=" << resources->getResource(Iron) << endl;
                 }
                 else
                     cout << "Invalid sub-choice" << endl;
                 logScore();
                 break;
             }
-            case 5:
+            case MenuOption::ManageMilitary:
             {
                 cout << "1. Recruit Soldiers" << endl;
                 cout << "2. Equip Weapons" << endl;
@@ -379,7 +374,7 @@ public:
                 logScore();
                 break;
             }
-            case 6:
+            case MenuOption::ManageEconomy:
             {
                 cout << "1. Generate Income" << endl;
                 cout << "2. Trade Resources" << endl;
@@ -401,7 +396,7 @@ public:
                     cin >> giveType >> giveAmount >> receiveType >> receiveAmount;
                     cin.ignore();
                     economy->tradeResources(giveType, giveAmount, receiveType, receiveAmount, *resources);
-                    cout << "Wealth: " << economy->getWealth() << ", Resources: Food=" << resources->getResource(0) << ", Wood=" << resources->getResource(1) << ", Stone=" << resources->getResource(2) << ", Iron=" << resources->getResource(3) << endl;
+                    cout << "Wealth: " << economy->getWealth() << ", Resources: Food=" << resources->getResource(Food) << ", Wood=" << resources->getResource(Wood) << ", Stone=" << resources->getResource(Stone) << ", Iron=" << resources->getResource(Iron) << endl;
                 }
                 else if (subChoice == 3)
                 {
@@ -417,7 +412,7 @@ public:
                 logScore();
                 break;
             }
-            case 7:
+            case MenuOption::ManageLeadership:
             {
                 cout << "1. Set Tax Rate" << endl;
                 cout << "2. Boost Influence" << endl;
@@ -455,7 +450,7 @@ public:
                 logScore();
                 break;
             }
-            case 8:
+            case MenuOption::ManageBank:
             {
                 cout << "1. Take Loan" << endl;
                 cout << "2. Make Investment" << endl;
@@ -496,7 +491,7 @@ public:
                 logScore();
                 break;
             }
-            case 9:
+            case MenuOption::ManageSocialStructure:
             {
                 cout << "Enter morale amount, education amount: ";
                 double moraleAmount, educationAmount;
@@ -508,7 +503,7 @@ public:
                 logScore();
                 break;
             }
-            case 10:
+            case MenuOption::TriggerEvent:
                 cout << "Enter event type (0-3): ";
                 int eventType;
                 cin >> eventType;
@@ -517,7 +512,7 @@ public:
                 cout << "Last Event: " << eventHandler->getLastEventType() << ", Population: " << population->getTotalPopulation() << ", Wealth: " << economy->getWealth() << endl;
                 logScore();
                 break;
-            case 11:
+            case MenuOption::NextTurn:
             {
                 cout << "Advancing to next turn..." << endl;
                 turn++;
@@ -525,7 +520,7 @@ public:
                 cout << "Turn " << turn << " completed." << endl;
                 break;
             }
-            case 12:
+            case MenuOption::Communication:
             {
                 cout << "1. Send Message" << endl;
                 cout << "2. Receive Message" << endl;
@@ -554,8 +549,9 @@ public:
                     break;
                 }
 
+                break; // prevent fall-through to alliance menu
             }
-            case 13:
+            case MenuOption::AllianceManagement:
             {
                 cout << "1. Form Alliance" << endl;
                 cout << "2. Break Alliance" << endl;
@@ -585,8 +581,9 @@ public:
                     cout << "Invalid sub-choice" << endl;
                     break;
                 }
+                break;
             }
-            case 14:
+            case MenuOption::TradeSystem:
             {
                 cout << "1. Offer Trade" << endl;
                 cout << "2. Attempt Smuggle" << endl;
@@ -615,8 +612,9 @@ public:
                     cout << "Invalid sub-choice" << endl;
                     break;
                 }
+                break;
             }
-            case 15:
+            case MenuOption::ConflictManagement:
             {
                 cout << "1. Declare War" << endl;
                 cout << "2. Betray Alliance" << endl;
@@ -644,8 +642,9 @@ public:
                     cout << "Invalid sub-choice" << endl;
                     break;
                 }
+                break;
             }
-            case 16:
+            case MenuOption::MapSystem:
             {
                 cout << "1. Place Kingdom" << endl;
                 cout << "2. Move Player" << endl;
@@ -679,7 +678,7 @@ public:
                     cout << "Invalid sub-choice" << endl;
                 break;
             }
-            case 17:
+            case MenuOption::Exit:
             {
                 cout << "Exiting game..." << endl;
                 isRunning = 0;
